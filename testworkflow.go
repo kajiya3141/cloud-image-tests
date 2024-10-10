@@ -19,10 +19,12 @@ package imagetest
 
 import (
 	"context"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"math/rand"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -1030,6 +1032,8 @@ func cleanTestWorkflow(test *TestWorkflow) (totalCleaned []string, totalErrs []e
 func parseResult(res testResult, localPath string) junit.Testsuite {
 	ret := junit.Testsuite{}
 	name := getTestSuiteName(res.testWorkflow)
+	testExcludeFilter := flag.Lookup("exclude_discrete_tests").Value.(flag.Getter).Get().(string)
+	excludeDiscreteRegex := regexp.MustCompile(testExcludeFilter)
 
 	switch {
 	case res.skipped:
@@ -1049,8 +1053,17 @@ func parseResult(res testResult, localPath string) junit.Testsuite {
 		// Tests handled by a suite but not executed or skipped should be marked disabled
 		for _, test := range getTestsBySuiteName(res.testWorkflow.Name, localPath) {
 			hasResult := false
-			for _, tc := range ret.Testcases {
+			for idx, tc := range ret.Testcases {
 				if tc.Name == test {
+					if excludeDiscreteRegex.MatchString(tc.Name) {
+						if ret.Testcases[idx].Failure != nil {
+							ret.Testcases[idx].Failure = &junit.Result{Data: "Failure ignored as the test was skipped via `exclude_discrete_tests`"}
+							ret.Failures--
+						}
+						tc = junit.Testcase{}
+						ret.Skipped++
+
+					}
 					hasResult = true
 					break
 				}

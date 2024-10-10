@@ -82,6 +82,7 @@ var (
 	parallelStagger         = flag.String("parallel_stagger", "60s", "parseable time.Duration to stagger each parallel test")
 	filter                  = flag.String("filter", "", "only run tests matching filter")
 	exclude                 = flag.String("exclude", "", "skip tests matching filter")
+	testExcludeFilter       = flag.String("exclude_discrete_tests", "", "yahyahyah")
 	machineType             = flag.String("machine_type", "", "deprecated, use -x86_shape and/or -arm64_shape instead")
 	x86Shape                = flag.String("x86_shape", "n1-standard-1", "default x86(-32 and -64) vm shape for tests not requiring a specific shape")
 	arm64Shape              = flag.String("arm64_shape", "t2a-standard-1", "default arm64 vm shape for tests not requiring a specific shape")
@@ -154,6 +155,17 @@ func main() {
 			log.Fatal("-exclude flag not valid:", err)
 		}
 		log.Printf("using -exclude %s", *exclude)
+	}
+
+	var excludeDiscreteRegex *regexp.Regexp
+	if *testExcludeFilter != "" {
+		var err error
+		excludeDiscreteRegex, err = regexp.Compile(*testExcludeFilter)
+		if err != nil {
+			log.Fatal("-exclude_discrete_tests flag not valid:", err)
+		} else {
+			log.Printf("Using -exclude_discrete_tests %s.\n Compiled to: %v", *testExcludeFilter, *excludeDiscreteRegex)
+		}
 	}
 
 	if *machineType != "" {
