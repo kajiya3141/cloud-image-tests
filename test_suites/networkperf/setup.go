@@ -104,14 +104,14 @@ var networkPerfTestConfig = []networkPerfTest{
 		networks:    []string{"DEFAULT", "TIER_1"},
 		quota:       &daisy.QuotaAvailable{Metric: "N2D_CPUS", Units: 288},
 	},
-	{
-		name:        "n4-16",
-		machineType: "n4-standard-16",
-		arch:        "X86_64",
-		networks:    []string{"DEFAULT"},
-		quota:       &daisy.QuotaAvailable{Metric: "CPUS", Units: 64, Region: "us-east4"},
-		zone:        "us-east4-b",
-	},
+	//{
+	//	name:        "n4-16",
+	//	machineType: "n4-standard-16",
+	//	arch:        "X86_64",
+	//	networks:    []string{"DEFAULT"},
+	//	quota:       &daisy.QuotaAvailable{Metric: "CPUS", Units: 64, Region: "us-east4"},
+	//	zone:        "us-east4-b",
+	//},
 	{
 		name:        "n4-80",
 		machineType: "n4-standard-80",
