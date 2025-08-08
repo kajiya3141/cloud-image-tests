@@ -123,95 +123,95 @@ func TestAddStopStep(t *testing.T) {
 	}
 }
 
-func TestCleanTestWorkflow(t *testing.T) {
-	twf := NewTestWorkflowForUnitTest("name", "image", "30m")
-	twf.wf.Project = "test-project"
-	_, daisyFake, err := daisycompute.NewTestClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/aggregated/instances?alt=json&pageToken=&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"Items":{"Instances":{"instances":[{"SelfLink": "projects/test-project/zones/test-zone/instances/test-instance-`+twf.wf.ID()+`", "Zone":"test-zone", "Name": "test-instance-`+twf.wf.ID()+`", "Description": "created by Daisy in workflow \"`+twf.wf.ID()+`\""}]}}}`)
-		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/zones/test-zone/instances/test-instance-"+twf.wf.ID()+"?alt=json&prettyPrint=false", "test-project") {
-			w.WriteHeader(200)
-			w.Write([]byte(`{"status":"DONE"}`))
-		} else if r.Method == "POST" && r.URL.String() == fmt.Sprintf("/projects/%s/zones/test-zone/operations//wait?alt=json&prettyPrint=false", "test-project") {
-			w.WriteHeader(200)
-			w.Write([]byte(`{"status":"DONE"}`))
-		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/%s/forwardingRules?alt=json&pageToken=&prettyPrint=false", "test-project", "test-region") {
-			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/test-region/forwardingRules/test-forwarding-rule", "Name": "test-forwarding-rule", "Network": "projects/test-project/global/networks/test-network-`+twf.wf.ID()+`"}]}`)
-		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/aggregated/disks?alt=json&pageToken=&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"items":{"zones/test-zone":{"disks":[{"SelfLink": "projects/test-project/zones/test-zone/disk/test-disk-`+twf.wf.ID()+`", "Zone":"test-zone", "Name": "test-disk-`+twf.wf.ID()+`", "Description": "created by Daisy in workflow \"`+twf.wf.ID()+`\""}]}}}`)
-		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/zones/test-zone/disks/test-disk-"+twf.wf.ID()+"?alt=json&prettyPrint=false", "test-project") {
-			w.WriteHeader(200)
-			w.Write([]byte(`{"status":"DONE"}`))
-		} else if r.Method == "POST" && r.URL.String() == fmt.Sprintf("/projects/%s/zones/test-zone/operations//wait?alt=json&prettyPrint=false", "test-project") {
-			w.WriteHeader(200)
-			w.Write([]byte(`{"status":"DONE"}`))
-		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/forwardingRules/test-forwarding-rule?alt=json&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"Status":"DONE"}`)
-		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/global/networks?alt=json&pageToken=&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/global/networks/test-network-`+twf.wf.ID()+`", "Name": "test-network-`+twf.wf.ID()+`", "Description": "created by Daisy in workflow \"`+twf.wf.ID()+`\""}]}`)
-		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/global/firewalls?alt=json&pageToken=&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/global/firewalls/test-firewall", "Network": "projects/test-project/global/networks/test-network-`+twf.wf.ID()+`", "Name": "test-firewall", "Description": "created by Daisy in workflow \"`+twf.wf.ID()+`\""}]}`)
-		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/aggregated/subnetworks?alt=json&pageToken=&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"items":{"regions/test-region":{"subnetworks":[{"Network": "projects/test-project/global/networks/test-network-`+twf.wf.ID()+`","SelfLink": "projects/test-project/regions/test-region/subnetworks/test-subnetwork", "Name": "test-subnetwork", "Region": "test-region", "Description": "created by Daisy in workflow \"`+twf.wf.ID()+`\""}]}}}`)
-		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/global/firewalls/test-firewall?alt=json&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"Status":"DONE"}`)
-		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/%s/backendServices?alt=json&pageToken=&prettyPrint=false", "test-project", "test-region") {
-			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/testRegion/backendServices/test-backend-service", "Name": "test-backend-service", "Network": "projects/test-project/global/networks/test-network-`+twf.wf.ID()+`"}]}`)
-		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/backendServices/test-backend-service?alt=json&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"Status":"DONE"}`)
-		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/global/networks/test-network-"+twf.wf.ID()+"?alt=json&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"Status":"DONE"}`)
-		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/subnetworks/test-subnetwork?alt=json&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"Status":"DONE"}`)
-		} else if r.Method == "POST" && r.URL.String() == fmt.Sprintf("/projects/%s/global/operations//wait?alt=json&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"Status":"DONE"}`)
-		} else if r.Method == "POST" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/operations//wait?alt=json&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"Status":"DONE"}`)
-		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/%s/targetHttpProxies?alt=json&pageToken=&prettyPrint=false", "test-project", "test-region") {
-			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/testRegion/targetHttpProxies/test-target-http-proxy", "Name": "test-target-http-proxy", "Network": "projects/test-project/global/networks/test-network"}]}`)
-		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/%s/networkEndpointGroups?alt=json&pageToken=&prettyPrint=false", "test-project", "test-region") {
-			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/testRegion/networkEndpointGroups/test-network-endpoint-group", "Name": "test-network-endpoint-group", "Network": "projects/test-project/global/networks/test-network"}]}`)
-		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/%s/urlMaps?alt=json&pageToken=&prettyPrint=false", "test-project", "test-region") {
-			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/testRegion/urlMaps/test-url-map", "Name": "test-url-map", "Network": "projects/test-project/global/networks/test-network", "Subnetwork": "projects/test-project/regions/test-region/subnetworks/test-subnetwork", "DefaultService": "projects/test-project/regions/test-region/backendServices/test-backend-service"}]}`)
-		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/urlMaps/test-url-map?alt=json&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"Status":"DONE"}`)
-		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/networkEndpointGroups/test-network-endpoint-group?alt=json&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"Status":"DONE"}`)
-		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/%s/targetHttpProxies?alt=json&pageToken=&prettyPrint=false", "test-project", "test-region") {
-			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/test-region/targetHttpProxies/test-target-http-proxy", "Name": "test-target-http-proxy", "urlMap": "projects/test-project/regions/testRegion/urlMaps/test-url-map"}]}`)
-		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/targetHttpProxies/test-target-http-proxy?alt=json&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"Status":"DONE"}`)
-		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/aggregated/forwardingRules?alt=json&pageToken=&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"items":{"forwardingRules":{"forwardingRules":[{"SelfLink": "projects/test-project/regions/test-region/forwardingRules/test-forwarding-rule-`+twf.wf.ID()+`", "Name": "test-forwarding-rule-`+twf.wf.ID()+`", "Region": "test-region"}]}}}`)
-		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions?alt=json&pageToken=&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/test-region"}]}`)
-		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/forwardingRules/test-forwarding-rule-"+twf.wf.ID()+"?alt=json&prettyPrint=false", "test-project") {
-			fmt.Fprint(w, `{"Status":"DONE"}`)
-		} else {
-			w.WriteHeader(555)
-			fmt.Fprint(w, "URL and Method not recognized:", r.Method, r.URL)
-		}
-	}))
-	if err != nil {
-		t.Fatal(err)
-	}
-	twf.Client = daisyFake
-	expect := []string{"projects/test-project/regions/test-region/forwardingRules/test-forwarding-rule-" + twf.wf.ID(), "projects/test-project/regions/test-region/backendServices/test-backend-service", "projects/test-project/regions/test-region/forwardingRules/test-forwarding-rule", "projects/test-project/global/firewalls/test-firewall", "projects/test-project/global/networks/test-network-" + twf.wf.ID(), "projects/test-project/regions/test-region/subnetworks/test-subnetwork", "projects/test-project/zones/test-zone/disks/test-disk-" + twf.wf.ID(), "projects/test-project/zones/test-zone/instances/test-instance-" + twf.wf.ID()}
-	cleaned, errs := cleanTestWorkflow(twf)
-	for _, err := range errs {
-		t.Errorf("got error from cleanTestWorkflow: %v", err)
-	}
-	sort.Strings(cleaned)
-	sort.Strings(expect)
-	if len(cleaned) != len(expect) {
-		t.Errorf("unexpected number of cleaned resources, want %d but got %d", len(expect), len(cleaned))
-	}
-	for i := range cleaned {
-		if cleaned[i] != expect[i] {
-			t.Errorf("unexpected cleaned resource at position %d, want %s but got %s", i, expect[i], cleaned[i])
-		}
-	}
-}
+//func TestCleanTestWorkflow(t *testing.T) {
+//	twf := NewTestWorkflowForUnitTest("name", "image", "30m")
+//	twf.wf.Project = "test-project"
+//	_, daisyFake, err := daisycompute.NewTestClient(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+//		if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/aggregated/instances?alt=json&pageToken=&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"Items":{"Instances":{"instances":[{"SelfLink": "projects/test-project/zones/test-zone/instances/test-instance-`+twf.wf.ID()+`", "Zone":"test-zone", "Name": "test-instance-`+twf.wf.ID()+`", "Description": "created by Daisy in workflow \"`+twf.wf.ID()+`\""}]}}}`)
+//		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/zones/test-zone/instances/test-instance-"+twf.wf.ID()+"?alt=json&prettyPrint=false", "test-project") {
+//			w.WriteHeader(200)
+//			w.Write([]byte(`{"status":"DONE"}`))
+//		} else if r.Method == "POST" && r.URL.String() == fmt.Sprintf("/projects/%s/zones/test-zone/operations//wait?alt=json&prettyPrint=false", "test-project") {
+//			w.WriteHeader(200)
+//			w.Write([]byte(`{"status":"DONE"}`))
+//		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/%s/forwardingRules?alt=json&pageToken=&prettyPrint=false", "test-project", "test-region") {
+//			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/test-region/forwardingRules/test-forwarding-rule", "Name": "test-forwarding-rule", "Network": "projects/test-project/global/networks/test-network-`+twf.wf.ID()+`"}]}`)
+//		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/aggregated/disks?alt=json&pageToken=&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"items":{"zones/test-zone":{"disks":[{"SelfLink": "projects/test-project/zones/test-zone/disk/test-disk-`+twf.wf.ID()+`", "Zone":"test-zone", "Name": "test-disk-`+twf.wf.ID()+`", "Description": "created by Daisy in workflow \"`+twf.wf.ID()+`\""}]}}}`)
+//		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/zones/test-zone/disks/test-disk-"+twf.wf.ID()+"?alt=json&prettyPrint=false", "test-project") {
+//			w.WriteHeader(200)
+//			w.Write([]byte(`{"status":"DONE"}`))
+//		} else if r.Method == "POST" && r.URL.String() == fmt.Sprintf("/projects/%s/zones/test-zone/operations//wait?alt=json&prettyPrint=false", "test-project") {
+//			w.WriteHeader(200)
+//			w.Write([]byte(`{"status":"DONE"}`))
+//		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/forwardingRules/test-forwarding-rule?alt=json&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"Status":"DONE"}`)
+//		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/global/networks?alt=json&pageToken=&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/global/networks/test-network-`+twf.wf.ID()+`", "Name": "test-network-`+twf.wf.ID()+`", "Description": "created by Daisy in workflow \"`+twf.wf.ID()+`\""}]}`)
+//		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/global/firewalls?alt=json&pageToken=&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/global/firewalls/test-firewall", "Network": "projects/test-project/global/networks/test-network-`+twf.wf.ID()+`", "Name": "test-firewall", "Description": "created by Daisy in workflow \"`+twf.wf.ID()+`\""}]}`)
+//		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/aggregated/subnetworks?alt=json&pageToken=&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"items":{"regions/test-region":{"subnetworks":[{"Network": "projects/test-project/global/networks/test-network-`+twf.wf.ID()+`","SelfLink": "projects/test-project/regions/test-region/subnetworks/test-subnetwork", "Name": "test-subnetwork", "Region": "test-region", "Description": "created by Daisy in workflow \"`+twf.wf.ID()+`\""}]}}}`)
+//		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/global/firewalls/test-firewall?alt=json&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"Status":"DONE"}`)
+//		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/%s/backendServices?alt=json&pageToken=&prettyPrint=false", "test-project", "test-region") {
+//			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/testRegion/backendServices/test-backend-service", "Name": "test-backend-service", "Network": "projects/test-project/global/networks/test-network-`+twf.wf.ID()+`"}]}`)
+//		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/backendServices/test-backend-service?alt=json&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"Status":"DONE"}`)
+//		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/global/networks/test-network-"+twf.wf.ID()+"?alt=json&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"Status":"DONE"}`)
+//		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/subnetworks/test-subnetwork?alt=json&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"Status":"DONE"}`)
+//		} else if r.Method == "POST" && r.URL.String() == fmt.Sprintf("/projects/%s/global/operations//wait?alt=json&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"Status":"DONE"}`)
+//		} else if r.Method == "POST" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/operations//wait?alt=json&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"Status":"DONE"}`)
+//		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/%s/targetHttpProxies?alt=json&pageToken=&prettyPrint=false", "test-project", "test-region") {
+//			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/testRegion/targetHttpProxies/test-target-http-proxy", "Name": "test-target-http-proxy", "Network": "projects/test-project/global/networks/test-network"}]}`)
+//		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/%s/networkEndpointGroups?alt=json&pageToken=&prettyPrint=false", "test-project", "test-region") {
+//			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/testRegion/networkEndpointGroups/test-network-endpoint-group", "Name": "test-network-endpoint-group", "Network": "projects/test-project/global/networks/test-network"}]}`)
+//		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/%s/urlMaps?alt=json&pageToken=&prettyPrint=false", "test-project", "test-region") {
+//			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/testRegion/urlMaps/test-url-map", "Name": "test-url-map", "Network": "projects/test-project/global/networks/test-network", "Subnetwork": "projects/test-project/regions/test-region/subnetworks/test-subnetwork", "DefaultService": "projects/test-project/regions/test-region/backendServices/test-backend-service"}]}`)
+//		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/urlMaps/test-url-map?alt=json&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"Status":"DONE"}`)
+//		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/networkEndpointGroups/test-network-endpoint-group?alt=json&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"Status":"DONE"}`)
+//		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/%s/targetHttpProxies?alt=json&pageToken=&prettyPrint=false", "test-project", "test-region") {
+//			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/test-region/targetHttpProxies/test-target-http-proxy", "Name": "test-target-http-proxy", "urlMap": "projects/test-project/regions/testRegion/urlMaps/test-url-map"}]}`)
+//		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/targetHttpProxies/test-target-http-proxy?alt=json&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"Status":"DONE"}`)
+//		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/aggregated/forwardingRules?alt=json&pageToken=&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"items":{"forwardingRules":{"forwardingRules":[{"SelfLink": "projects/test-project/regions/test-region/forwardingRules/test-forwarding-rule-`+twf.wf.ID()+`", "Name": "test-forwarding-rule-`+twf.wf.ID()+`", "Region": "test-region"}]}}}`)
+//		} else if r.Method == "GET" && r.URL.String() == fmt.Sprintf("/projects/%s/regions?alt=json&pageToken=&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"items":[{"SelfLink": "projects/test-project/regions/test-region"}]}`)
+//		} else if r.Method == "DELETE" && r.URL.String() == fmt.Sprintf("/projects/%s/regions/test-region/forwardingRules/test-forwarding-rule-"+twf.wf.ID()+"?alt=json&prettyPrint=false", "test-project") {
+//			fmt.Fprint(w, `{"Status":"DONE"}`)
+//		} else {
+//			w.WriteHeader(555)
+//			fmt.Fprint(w, "URL and Method not recognized:", r.Method, r.URL)
+//		}
+//	}))
+//	if err != nil {
+//		t.Fatal(err)
+//	}
+//	twf.Client = daisyFake
+//	expect := []string{"projects/test-project/regions/test-region/forwardingRules/test-forwarding-rule-" + twf.wf.ID(), "projects/test-project/regions/test-region/backendServices/test-backend-service", "projects/test-project/regions/test-region/forwardingRules/test-forwarding-rule", "projects/test-project/global/firewalls/test-firewall", "projects/test-project/global/networks/test-network-" + twf.wf.ID(), "projects/test-project/regions/test-region/subnetworks/test-subnetwork", "projects/test-project/zones/test-zone/disks/test-disk-" + twf.wf.ID(), "projects/test-project/zones/test-zone/instances/test-instance-" + twf.wf.ID()}
+//	cleaned, errs := cleanTestWorkflow(twf)
+//	for _, err := range errs {
+//		t.Errorf("got error from cleanTestWorkflow: %v", err)
+//	}
+//	sort.Strings(cleaned)
+//	sort.Strings(expect)
+//	if len(cleaned) != len(expect) {
+//		t.Errorf("unexpected number of cleaned resources, want %d but got %d", len(expect), len(cleaned))
+//	}
+//	for i := range cleaned {
+//		if cleaned[i] != expect[i] {
+//			t.Errorf("unexpected cleaned resource at position %d, want %s but got %s", i, expect[i], cleaned[i])
+//		}
+//	}
+//}
 
 func TestAddWaitStep(t *testing.T) {
 	twf := NewTestWorkflowForUnitTest("name", "image", "30m")

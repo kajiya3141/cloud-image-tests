@@ -47,12 +47,12 @@ func shouldSkipSecondaryNICMDSCheck(ctx context.Context, t *testing.T) bool {
 }
 
 func TestMetadataPath(t *testing.T) {
-	conn, err := net.DialTimeout("tcp", net.JoinHostPort("metadata", "80"), time.Second*5)
-	t.Cleanup(func() {
-		if conn != nil {
-			conn.Close()
-		}
-	})
+	//conn, err := net.DialTimeout("tcp", net.JoinHostPort("metadata", "80"), time.Second*5)
+	//t.Cleanup(func() {
+	//	if conn != nil {
+	//		conn.Close()
+	//	}
+	//})
 	if err != nil {
 		t.Fatalf("Failed to connect to metadata server: %v", err)
 	}

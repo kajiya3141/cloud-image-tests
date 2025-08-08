@@ -135,13 +135,13 @@ func checkBackendsInLoadBalancer(ctx context.Context, t *testing.T, lbip string)
 }
 
 func waitForBackends(ctx context.Context, t *testing.T, backend1 string, backend2 string) {
-	t.Cleanup(func() {
-		if t.Failed() {
-			// Stop backends on failure (in case we didn't make it that far
-			getTargetWithTimeout(ctx, t, backend1, "stop")
-			getTargetWithTimeout(ctx, t, backend2, "stop")
-		}
-	})
+	//t.Cleanup(func() {
+	//	if t.Failed() {
+	//		// Stop backends on failure (in case we didn't make it that far
+	//		getTargetWithTimeout(ctx, t, backend1, "stop")
+	//		getTargetWithTimeout(ctx, t, backend2, "stop")
+	//	}
+	//})
 	wait := func(backend string) {
 		for {
 			if err := ctx.Err(); err != nil {
@@ -260,62 +260,62 @@ func setupLoadBalancer(ctx context.Context, t *testing.T, lbType, backend1, back
 	httpProxyName := hostname + "-httpproxy"
 	forwardingRuleName := hostname + "-forwardingrule"
 
-	t.Cleanup(func() {
-		ctx := context.TODO() // we want to fire off attempts to clean up even if the test context has expired
-		tryWait := func(op *compute.Operation, err error) {
-			if err == nil {
-				op.Wait(ctx)
-			}
-		}
-		deleteFRReq := &computepb.DeleteForwardingRuleRequest{
-			Project:        project,
-			Region:         region,
-			ForwardingRule: forwardingRuleName,
-		}
-		tryWait(forwardingRuleClient.Delete(ctx, deleteFRReq))
-		if lbType == "L7" { // Clean up extra resources from L7 load balancers
-			deleteHTTPProxyReq := &computepb.DeleteRegionTargetHttpProxyRequest{
-				Project:         project,
-				Region:          region,
-				TargetHttpProxy: httpProxyName,
-			}
-			tryWait(httpProxyClient.Delete(ctx, deleteHTTPProxyReq))
-			deleteURLMapReq := &computepb.DeleteRegionUrlMapRequest{
-				Project: project,
-				Region:  region,
-				UrlMap:  urlMapName,
-			}
-			tryWait(urlMapsClient.Delete(ctx, deleteURLMapReq))
-		}
-		deleteBEReq := &computepb.DeleteRegionBackendServiceRequest{ // Delete backend
-			Project:        project,
-			Region:         region,
-			BackendService: backendName,
-		}
-		tryWait(backendServiceClient.Delete(ctx, deleteBEReq))
-		// Delete health check
-		deleteHcReq := &computepb.DeleteRegionHealthCheckRequest{
-			Project:     project,
-			Region:      region,
-			HealthCheck: healthCheckName,
-		}
-		healthCheckClient.Delete(ctx, deleteHcReq)
-		deleteNegReq := &computepb.DeleteNetworkEndpointGroupRequest{ // delete NEG
-			Project:              project,
-			Zone:                 zone,
-			NetworkEndpointGroup: negName,
-		}
-		negClient.Delete(ctx, deleteNegReq)
-
-		negClient.Close()
-		healthCheckClient.Close()
-		urlMapsClient.Close()
-		networkClient.Close()
-		zoneClient.Close()
-		httpProxyClient.Close()
-		backendServiceClient.Close()
-		forwardingRuleClient.Close()
-	})
+	//t.Cleanup(func() {
+	//	ctx := context.TODO() // we want to fire off attempts to clean up even if the test context has expired
+	//	tryWait := func(op *compute.Operation, err error) {
+	//		if err == nil {
+	//			op.Wait(ctx)
+	//		}
+	//	}
+	//	deleteFRReq := &computepb.DeleteForwardingRuleRequest{
+	//		Project:        project,
+	//		Region:         region,
+	//		ForwardingRule: forwardingRuleName,
+	//	}
+	//	tryWait(forwardingRuleClient.Delete(ctx, deleteFRReq))
+	//	if lbType == "L7" { // Clean up extra resources from L7 load balancers
+	//		deleteHTTPProxyReq := &computepb.DeleteRegionTargetHttpProxyRequest{
+	//			Project:         project,
+	//			Region:          region,
+	//			TargetHttpProxy: httpProxyName,
+	//		}
+	//		tryWait(httpProxyClient.Delete(ctx, deleteHTTPProxyReq))
+	//		deleteURLMapReq := &computepb.DeleteRegionUrlMapRequest{
+	//			Project: project,
+	//			Region:  region,
+	//			UrlMap:  urlMapName,
+	//		}
+	//		tryWait(urlMapsClient.Delete(ctx, deleteURLMapReq))
+	//	}
+	//	deleteBEReq := &computepb.DeleteRegionBackendServiceRequest{ // Delete backend
+	//		Project:        project,
+	//		Region:         region,
+	//		BackendService: backendName,
+	//	}
+	//	tryWait(backendServiceClient.Delete(ctx, deleteBEReq))
+	//	// Delete health check
+	//	deleteHcReq := &computepb.DeleteRegionHealthCheckRequest{
+	//		Project:     project,
+	//		Region:      region,
+	//		HealthCheck: healthCheckName,
+	//	}
+	//	healthCheckClient.Delete(ctx, deleteHcReq)
+	//	deleteNegReq := &computepb.DeleteNetworkEndpointGroupRequest{ // delete NEG
+	//		Project:              project,
+	//		Zone:                 zone,
+	//		NetworkEndpointGroup: negName,
+	//	}
+	//	negClient.Delete(ctx, deleteNegReq)
+	//
+	//	negClient.Close()
+	//	healthCheckClient.Close()
+	//	urlMapsClient.Close()
+	//	networkClient.Close()
+	//	zoneClient.Close()
+	//	httpProxyClient.Close()
+	//	backendServiceClient.Close()
+	//	forwardingRuleClient.Close()
+	//})
 
 	switch lbType {
 	case "L3":

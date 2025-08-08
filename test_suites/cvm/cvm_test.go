@@ -189,7 +189,7 @@ func TestLiveMigrate(t *testing.T) {
 	if err != nil {
 		t.Fatalf("could not make compute api client: %v", err)
 	}
-	t.Cleanup(func() { client.Close() })
+	//t.Cleanup(func() { client.Close() })
 	req := &computepb.SimulateMaintenanceEventInstanceRequest{
 		Project:  prj,
 		Zone:     zone,

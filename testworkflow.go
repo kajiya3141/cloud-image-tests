@@ -29,7 +29,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/storage"
-	"github.com/GoogleCloudPlatform/cloud-image-tests/cleanerupper"
 	"github.com/GoogleCloudPlatform/cloud-image-tests/utils"
 	daisy "github.com/GoogleCloudPlatform/compute-daisy"
 	daisycompute "github.com/GoogleCloudPlatform/compute-daisy/compute"
@@ -1047,21 +1046,21 @@ func runTestWorkflow(ctx context.Context, metrics *testMetrics, test *TestWorkfl
 		return res
 	}
 
-	clean := func() {
-		metrics.done()
-		log.Printf("cleaning up after test %s/%s (ID %s) in project %s, progress: %s\n", test.Name, test.Image.Name, test.wf.ID(), test.wf.Project, metrics.progress())
-		cleaned, errs := cleanTestWorkflow(test)
-		for _, err := range errs {
-			log.Printf("error cleaning test %s/%s: %v\n", test.Name, test.Image.Name, err)
-		}
-		if len(cleaned) > 0 {
-			log.Printf("test %s/%s had %d leftover resources\n", test.Name, test.Image.Name, len(cleaned))
-		}
-		for _, c := range cleaned {
-			log.Printf("deleted resource %s from test %s/%s", c, test.Name, test.Image.Name)
-		}
-	}
-	defer clean()
+	//clean := func() {
+	//	metrics.done()
+	//	log.Printf("cleaning up after test %s/%s (ID %s) in project %s, progress: %s\n", test.Name, test.Image.Name, test.wf.ID(), test.wf.Project, metrics.progress())
+	//	cleaned, errs := cleanTestWorkflow(test)
+	//	for _, err := range errs {
+	//		log.Printf("error cleaning test %s/%s: %v\n", test.Name, test.Image.Name, err)
+	//	}
+	//	if len(cleaned) > 0 {
+	//		log.Printf("test %s/%s had %d leftover resources\n", test.Name, test.Image.Name, len(cleaned))
+	//	}
+	//	for _, c := range cleaned {
+	//		log.Printf("deleted resource %s from test %s/%s", c, test.Name, test.Image.Name)
+	//	}
+	//}
+	//defer clean()
 
 	start := time.Now()
 	log.Printf("running test %s/%s (ID %s) in project %s, progress: %s\n", test.Name, test.Image.Name, test.wf.ID(), test.wf.Project, metrics.progress())
@@ -1083,25 +1082,25 @@ func runTestWorkflow(ctx context.Context, metrics *testMetrics, test *TestWorkfl
 	return res
 }
 
-func cleanTestWorkflow(test *TestWorkflow) (totalCleaned []string, totalErrs []error) {
-	c := cleanerupper.Clients{Daisy: test.Client}
-	policy := cleanerupper.WorkflowPolicy(test.wf.ID())
-
-	cleaned, errs := cleanerupper.CleanInstances(c, test.wf.Project, policy, false)
-	totalCleaned = append(totalCleaned, cleaned...)
-	totalErrs = append(totalErrs, errs...)
-	cleaned, errs = cleanerupper.CleanDisks(c, test.wf.Project, policy, false)
-	totalCleaned = append(totalCleaned, cleaned...)
-	totalErrs = append(totalErrs, errs...)
-	cleaned, errs = cleanerupper.CleanLoadBalancerResources(c, test.wf.Project, policy, false)
-	totalCleaned = append(totalCleaned, cleaned...)
-	totalErrs = append(totalErrs, errs...)
-	cleaned, errs = cleanerupper.CleanNetworks(c, test.wf.Project, policy, false)
-	totalCleaned = append(totalCleaned, cleaned...)
-	totalErrs = append(totalErrs, errs...)
-
-	return
-}
+//func cleanTestWorkflow(test *TestWorkflow) (totalCleaned []string, totalErrs []error) {
+//	c := cleanerupper.Clients{Daisy: test.Client}
+//	policy := cleanerupper.WorkflowPolicy(test.wf.ID())
+//
+//	cleaned, errs := cleanerupper.CleanInstances(c, test.wf.Project, policy, false)
+//	totalCleaned = append(totalCleaned, cleaned...)
+//	totalErrs = append(totalErrs, errs...)
+//	cleaned, errs = cleanerupper.CleanDisks(c, test.wf.Project, policy, false)
+//	totalCleaned = append(totalCleaned, cleaned...)
+//	totalErrs = append(totalErrs, errs...)
+//	cleaned, errs = cleanerupper.CleanLoadBalancerResources(c, test.wf.Project, policy, false)
+//	totalCleaned = append(totalCleaned, cleaned...)
+//	totalErrs = append(totalErrs, errs...)
+//	cleaned, errs = cleanerupper.CleanNetworks(c, test.wf.Project, policy, false)
+//	totalCleaned = append(totalCleaned, cleaned...)
+//	totalErrs = append(totalErrs, errs...)
+//
+//	return
+//}
 
 // gets result struct and converts to a jUnit TestSuite
 func parseResult(res testResult, localPath string) junit.Testsuite {
