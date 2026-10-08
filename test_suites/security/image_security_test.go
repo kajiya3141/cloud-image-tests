@@ -208,10 +208,24 @@ func verifyPassword(ctx context.Context) error {
 	return nil
 }
 
+// sshdEffectiveSetting returns the value of a single option from the effective
+// configuration printed by "sshd -T". ok is false when the option is absent
+// from the output. A successful "sshd -T" always lists every keyword, so an
+// absent option means sshd exited successfully but produced incomplete output
+// (for example if it had not finished initializing at boot) rather than the
+// option being set to an unexpected value.
+func sshdEffectiveSetting(sshdConfig []byte, key string) (value string, ok bool) {
+	re := regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(key) + `[ \t]+([^\r\n]+?)[ \t\r]*$`)
+	m := re.FindSubmatch(sshdConfig)
+	if m == nil {
+		return "", false
+	}
+	return string(m[1]), true
+}
+
 func verifySSHConfig(t *testing.T, image string) error {
 	t.Helper()
-	var sshdConfig []byte
-	var err error
+	var cmd *exec.Cmd
 	if utils.IsWindows() {
 		addUser := exec.CommandContext(utils.Context(t), `net`, `user`, `testadmin`, `password123!`, `/add`)
 		o, err := addUser.Output()
@@ -219,21 +233,32 @@ func verifySSHConfig(t *testing.T, image string) error {
 			t.Fatalf("failed to add testadmin user: %v; output: %s", err, o)
 		}
 		addToGrp := exec.CommandContext(utils.Context(t), `net`, `localgroup`, `administrators`, `testadmin`, `/add`)
-		err = addToGrp.Run()
-		if err != nil {
+		if err := addToGrp.Run(); err != nil {
 			t.Fatalf("failed to add testadmin to administrators: %v; output: %s", err, o)
 		}
-		sshdConfig, err = exec.CommandContext(utils.Context(t), `C:\Program Files\OpenSSH\sshd.exe`, `-C`, `user=testadmin`, "-T").Output()
+		cmd = exec.CommandContext(utils.Context(t), `C:\Program Files\OpenSSH\sshd.exe`, `-C`, `user=testadmin`, "-T")
 	} else {
-		sshdConfig, err = exec.CommandContext(utils.Context(t), "sshd", "-T").Output()
+		cmd = exec.CommandContext(utils.Context(t), "sshd", "-T")
 	}
+
+	// Capture stderr so a failed "sshd -T" (e.g. "no hostkeys available --
+	// exiting." early at boot) produces an actionable error message.
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+	sshdConfig, err := cmd.Output()
 	if err != nil {
-		return fmt.Errorf("could not get effective sshd config: %s", err)
+		return fmt.Errorf("could not get effective sshd config: %v; stderr: %q", err, strings.TrimSpace(stderr.String()))
 	}
-	// Effective configuration keys are all lowercase
-	passwordauthsetting := strings.TrimSuffix(strings.TrimSuffix(string(regexp.MustCompile(`passwordauthentication[ \t]+[a-zA-Z]+\r?\n`).Find(sshdConfig)), "\n"), "\r")
-	if passwordauthsetting != "passwordauthentication no" {
-		return fmt.Errorf("sshd passwordauthentication setting is %q, want %q", passwordauthsetting, "passwordauthencation no")
+
+	// Effective configuration keys are all lowercase. A missing key (rather than
+	// a wrong value) indicates sshd returned success with incomplete output, so
+	// fail loudly instead of comparing against an empty string.
+	passwordauthsetting, ok := sshdEffectiveSetting(sshdConfig, "passwordauthentication")
+	if !ok {
+		return fmt.Errorf("sshd -T succeeded but its output contained no passwordauthentication setting; effective config may be incomplete (%d bytes); stderr: %q", len(sshdConfig), strings.TrimSpace(stderr.String()))
+	}
+	if passwordauthsetting != "no" {
+		return fmt.Errorf("sshd passwordauthentication setting is %q, want %q", passwordauthsetting, "no")
 	}
 	if utils.IsSLES(image) || utils.IsSUSE(image) || utils.IsWindows() {
 		// SLES ships with "PermitRootLogin yes" in SSHD config.
@@ -241,9 +266,14 @@ func verifySSHConfig(t *testing.T, image string) error {
 		return nil
 	}
 
-	permitrootloginsetting := strings.TrimSuffix(strings.TrimSuffix(string(regexp.MustCompile(`permitrootlogin[ \t]+[a-zA-Z\-]+\r?\n`).Find(sshdConfig)), "\n"), "\r")
-	if permitrootloginsetting != "permitrootlogin no" && permitrootloginsetting != "permitrootlogin prohibit-password" && permitrootloginsetting != "permitrootlogin without-password" {
-		return fmt.Errorf("sshd permitrootlogin setting is %q, want %q, %q, or %q", permitrootloginsetting, "permitrootlogin no", "permitrootlogin prohibit-password", "permitrootlogin without-password")
+	permitrootloginsetting, ok := sshdEffectiveSetting(sshdConfig, "permitrootlogin")
+	if !ok {
+		return fmt.Errorf("sshd -T succeeded but its output contained no permitrootlogin setting; effective config may be incomplete (%d bytes)", len(sshdConfig))
+	}
+	switch permitrootloginsetting {
+	case "no", "prohibit-password", "without-password":
+	default:
+		return fmt.Errorf("sshd permitrootlogin setting is %q, want %q, %q, or %q", permitrootloginsetting, "no", "prohibit-password", "without-password")
 	}
 	return nil
 }
